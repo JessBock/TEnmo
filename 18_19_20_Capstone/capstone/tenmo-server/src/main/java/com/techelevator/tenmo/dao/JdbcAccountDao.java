@@ -1,18 +1,17 @@
 package com.techelevator.tenmo.dao;
 
 import com.techelevator.tenmo.model.Transfer;
-import org.springframework.boot.autoconfigure.quartz.QuartzProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class JdbcAccountDao implements AccountDao {
@@ -58,12 +57,67 @@ public class JdbcAccountDao implements AccountDao {
 
     }
 
-
-    public void viewTransfers(Principal principal) {
+    public List<Transfer> viewTransfers(Principal principal) {
 
         long user = userDao.findIdByUsername(principal.getName());
-
         String accountSql = "SELECT account_id FROM account WHERE user_id = ?";
+        SqlRowSet accounts = jdbcTemplate.queryForRowSet(accountSql, user);
+        List<Long> accountsArray = new ArrayList<>();
+        while (accounts.next()) {
+            accountsArray.add(accounts.getLong("account_id"));
+        }
+        Transfer transfer = new Transfer();
+        List<Transfer> transfersArray = new ArrayList<>();
+        for (Long account : accountsArray) {
+            String sql = "SELECT transfer_id, account_from, account_to, transfer_type_desc,transfer_status_desc, amount " +
+                    "FROM transfer " +
+                    "JOIN transfer_type ON transfer_type.transfer_type_id = transfer.transfer_type_id "+
+                    "JOIN transfer_status ON transfer_status.transfer_status_id = transfer.transfer_status_id "+
+                    "WHERE (account_from = ? OR account_to = ?) AND transfer.transfer_status_id = 2;";
+            SqlRowSet transactions = jdbcTemplate.queryForRowSet(sql, account, account);
+            while (transactions.next()) {
+                transfer = mapRowToTransfer(transactions);
+                transfersArray.add(transfer);
+            }
+        }
+        return transfersArray;
+
+    }
+
+    public Transfer transactionDetails(long transferId){
+        Transfer transfer = new Transfer();
+        String sql = "SELECT transfer_id, account_from, account_to, transfer_type_desc,transfer_status_desc, amount " +
+                "FROM transfer " +
+                "JOIN transfer_type ON transfer_type.transfer_type_id = transfer.transfer_type_id "+
+                "JOIN transfer_status ON transfer_status.transfer_status_id = transfer.transfer_status_id "+
+                "WHERE  transfer_id = ?";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, transferId);
+        if (results.next()) {
+            transfer = mapRowToTransfer(results);
+        }
+        return transfer;
+    }
+
+    private Transfer mapRowToTransfer(SqlRowSet rowSet) {
+        Transfer transfer = new Transfer();
+        transfer.setTransferId(rowSet.getLong("transfer_id"));
+        transfer.setTransferType(rowSet.getString("transfer_type_desc"));
+        transfer.setTransferStatus(rowSet.getString("transfer_status_desc"));
+
+        String username = userDao.findUsernameByAccountId(rowSet.getLong("account_from"));
+        transfer.setUsernameFrom(username);
+
+        username = userDao.findUsernameByAccountId(rowSet.getLong("account_to"));
+        transfer.setUsernameTo(username);
+
+        transfer.setAmount(rowSet.getBigDecimal("amount"));
+        return transfer;
+    }
+
+    /*
+
+    Some of this can be user on Client side for displays!
+
         Long results = jdbcTemplate.queryForObject(accountSql,long.class, user);
         System.out.println("Transfer to:\n" + "ID\t\t\t\tFrom/To\t\t\t\t\tAmount\n");
         if (results != null) {
@@ -82,36 +136,10 @@ public class JdbcAccountDao implements AccountDao {
                 } else if (results == account_to) {
                     String username = userDao.findUsernameByAccountId(account_from);
                     System.out.println(transferId + "\t\t\tFrom: " + username + "\t\t\t" + "$ " + amount);
-
                 }
             }
         }
-
-
-    }
-
-
-    public Transfer transactionDetails(long transfer_id){
-        String sql = "SELECT transfer_id,account_from,account_to,transfer_type_desc,transfer_status_desc,amount " +
-                "FROM transfer " +
-                "JOIN transfer_type ON transfer_type.transfer_type_id = transfer.transfer_type_id "+
-                "JOIN transfer_status ON transfer_status.transfer_status_id = transfer.transfer_status_id "+
-                "WHERE  transfer_id = ?";
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql,transfer_id);
-        Transfer transfer =mapRowToTransfer(results);
-        return transfer;
-    }
-
-    private Transfer mapRowToTransfer(SqlRowSet rowset){
-        Transfer transfer = new Transfer();
-        transfer.setTransfer_id(rowset.getLong("transfer_id"));
-        transfer.setTransfer_type(rowset.getString("transfer_type_desc"));
-        transfer.setTransfer_Status(rowset.getString("transfer_status_desc"));
-        transfer.setAccount_from(rowset.getLong("account_from"));
-        transfer.setAccount_to(rowset.getLong("account_to"));
-        transfer.setAmount(rowset.getBigDecimal("amount"));
-        return transfer;
-    }
+         */
 }
 
 

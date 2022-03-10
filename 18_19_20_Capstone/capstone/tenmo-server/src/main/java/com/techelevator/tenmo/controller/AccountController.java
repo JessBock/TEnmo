@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.List;
 
 @RestController
+@PreAuthorize("isAuthenticated()")
 @RequestMapping("/account/")
 
 public class AccountController {
@@ -33,14 +35,15 @@ public class AccountController {
     public void transfer(@PathVariable long account_from,@PathVariable long account_to, @PathVariable BigDecimal amount){
         dao.transfer(account_from, account_to, amount);
     }
-    @PreAuthorize("isAuthenticated()")
+
     @RequestMapping(path = "transfers", method = RequestMethod.GET)
-    public void getTransfer(Principal principle){
-        dao.viewTransfers(principle);
+    public List<Transfer> getTransfers(Principal principle){
+         List<Transfer> transfers = dao.viewTransfers(principle);
+         return transfers;
     }
 
     @RequestMapping(path = "transfer/{transfer_id}", method = RequestMethod.GET)
-    public Transfer getTransferDetails(@PathVariable long transfer_id){
+    public Transfer getTransferDetails(@PathVariable long transfer_id) {
         Transfer results = dao.transactionDetails(transfer_id);
         return results;
     }
