@@ -89,5 +89,11 @@ public class JdbcUserDao implements UserDao {
         return user;
     }
 
+    public String findUsernameByAccountId(long accountId){
+        String sql = "SELECT username FROM tenmo_user JOIN account ON account.user_id = tenmo_user.user_id WHERE account_id = ?";
+        String username = jdbcTemplate.queryForObject(sql,String.class,accountId);
+        return username;
+    }
+
 
 }
