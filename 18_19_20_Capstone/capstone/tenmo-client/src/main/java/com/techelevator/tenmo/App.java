@@ -1,9 +1,15 @@
 package com.techelevator.tenmo;
 
 import com.techelevator.tenmo.model.AuthenticatedUser;
+import com.techelevator.tenmo.model.Transfer;
 import com.techelevator.tenmo.model.UserCredentials;
+import com.techelevator.tenmo.services.AccountService;
 import com.techelevator.tenmo.services.AuthenticationService;
 import com.techelevator.tenmo.services.ConsoleService;
+import com.techelevator.tenmo.services.UserService;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 public class App {
 
@@ -11,6 +17,8 @@ public class App {
 
     private final ConsoleService consoleService = new ConsoleService();
     private final AuthenticationService authenticationService = new AuthenticationService(API_BASE_URL);
+    private final AccountService accountService = new AccountService(API_BASE_URL);
+    private final UserService userService = new UserService(API_BASE_URL);
 
     private AuthenticatedUser currentUser;
 
@@ -26,6 +34,7 @@ public class App {
             mainMenu();
         }
     }
+
     private void loginMenu() {
         int menuSelection = -1;
         while (menuSelection != 0 && currentUser == null) {
@@ -57,6 +66,9 @@ public class App {
         currentUser = authenticationService.login(credentials);
         if (currentUser == null) {
             consoleService.printErrorMessage();
+        } else {
+            userService.setAuthToken(currentUser.getToken());
+            accountService.setAuthToken(currentUser.getToken());
         }
     }
 
@@ -84,29 +96,40 @@ public class App {
         }
     }
 
-	private void viewCurrentBalance() {
-		// TODO Auto-generated method stub
-		
-	}
+    private void viewCurrentBalance() {
+        // TODO Auto-generated method stub
+        List<BigDecimal> balances = accountService.getBalance();
+        for (BigDecimal balance : balances) {
+            System.out.println("Your current account balance is: $" + balance);
+        }
+    }
 
-	private void viewTransferHistory() {
-		// TODO Auto-generated method stub
-		
-	}
+    private void viewTransferHistory() {
+        // TODO Auto-generated method stub
+        List<Transfer> transfers = userService.getTransferHistory();
+        System.out.println("Transfer to:\n" + "ID\t\t\t\tFrom/To\t\t\t\t\tAmount\n");
+        for (Transfer transfer : transfers) {
+            if (currentUser.getUser().getUsername().equals(transfer.getUsernameFrom())) {
+                System.out.println(transfer.getTransferId() + "\t\t\tTo: " + transfer.getUsernameTo() + "\t\t\t\t" + "$ " + transfer.getAmount());
+            } else if (currentUser.getUser().getUsername().equals(transfer.getUsernameTo())) {
+                System.out.println(transfer.getTransferId() + "\t\t\tFrom: " + transfer.getUsernameFrom() + "\t\t\t" + "$ " + transfer.getAmount());
+            }
+        }
+    }
 
-	private void viewPendingRequests() {
-		// TODO Auto-generated method stub
-		
-	}
+    private void viewPendingRequests() {
+        // TODO Auto-generated method stub
 
-	private void sendBucks() {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	private void requestBucks() {
-		// TODO Auto-generated method stub
-		
-	}
+    private void sendBucks() {
+        // TODO Auto-generated method stub
+
+    }
+
+    private void requestBucks() {
+        // TODO Auto-generated method stub
+
+    }
 
 }

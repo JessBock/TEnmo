@@ -15,4 +15,6 @@ public interface AccountDao {
     public List<Transfer> viewTransfers(Principal principal);
 
     public Transfer transactionDetails(long transferId);
+
+
 }

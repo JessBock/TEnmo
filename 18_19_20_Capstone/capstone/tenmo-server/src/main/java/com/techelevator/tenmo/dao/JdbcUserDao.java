@@ -96,5 +96,16 @@ public class JdbcUserDao implements UserDao {
         return user;
     }
 
+    public List <Long> findAccountIdByUsername(String username){
+        String sql = "SELECT account_id FROM tenmo_user JOIN account ON account.user_id = tenmo_user.user_id WHERE username ILIKE ?";
+        SqlRowSet accountId = jdbcTemplate.queryForRowSet(sql,username);
+        List <Long>accountIds = new ArrayList<>();
+        while(accountId.next()){
+            accountIds.add(accountId.getLong("account_id"));
+        }
+
+        return accountIds;
+    }
+
 
 }

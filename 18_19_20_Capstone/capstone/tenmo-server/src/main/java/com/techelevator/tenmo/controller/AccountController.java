@@ -3,6 +3,7 @@ package com.techelevator.tenmo.controller;
 import com.techelevator.tenmo.dao.AccountDao;
 import com.techelevator.tenmo.dao.JdbcAccountDao;
 import com.techelevator.tenmo.dao.JdbcUserDao;
+import com.techelevator.tenmo.dao.UserDao;
 import com.techelevator.tenmo.model.Transfer;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,9 +22,10 @@ import java.util.List;
 
 public class AccountController {
     private AccountDao dao;
+    private UserDao userDao;
 
-    public AccountController(AccountDao dao){
-        this.dao = dao;
+    public AccountController(AccountDao dao,UserDao userDao){
+        this.dao = dao; this.userDao = userDao;
     }
 
     @RequestMapping (path = "{account_id}/balance", method = RequestMethod.GET)
@@ -46,6 +48,12 @@ public class AccountController {
     public Transfer getTransferDetails(@PathVariable long transfer_id) {
         Transfer results = dao.transactionDetails(transfer_id);
         return results;
+    }
+
+    @RequestMapping(method = RequestMethod.GET)
+    public List<Long> getAccounts(Principal principal){
+        List<Long> accounts = userDao.findAccountIdByUsername(principal.getName());
+        return accounts;
     }
 
 
